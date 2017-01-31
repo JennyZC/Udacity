@@ -16,7 +16,8 @@ def toRank3(gray_image):
 	return result
 
 def preprocess(image):
-	img_yuv = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
+	resized_image = cv2.resize(image, (160, 80))
+	img_yuv = cv2.cvtColor(resized_image, cv2.COLOR_BGR2YUV)
 	img_y = img_yuv[:, :, 1]
 	img_y = np.float32(img_y)
 	img_y = img_y - np.mean(img_y)
@@ -39,7 +40,7 @@ def get_train_validation_path(data_file, image_path, validation_prob):
 def process_line(line, image_path):
 	data = line.split(',')
 	img = imread(image_path + data[0]).astype(np.float32)
-	preprocessed_img = img#preprocess(img)
+	preprocessed_img = preprocess(img)
 	return preprocessed_img, data[3]
 
 def get_generator(lines, image_path, batch_size):
@@ -61,7 +62,7 @@ def get_generator(lines, image_path, batch_size):
 def get_nvidia_model():
 	model = Sequential()
 	
-	model.add(Convolution2D(24, 5, 5, activation='relu', input_shape=(160, 320, 1)))
+	model.add(Convolution2D(24, 5, 5, activation='relu', input_shape=(80, 160, 1)))
 	model.add(MaxPooling2D(pool_size=(2, 2)))
 
 	model.add(Convolution2D(36, 5, 5, activation='relu'))
@@ -75,9 +76,9 @@ def get_nvidia_model():
 
 	model.add(Flatten())
 
-	#model.add(Dense(1164, activation='relu'))
+	model.add(Dense(1164, activation='relu'))
 
-	#model.add(Dense(100, activation='relu'))
+	model.add(Dense(100, activation='relu'))
 
 	model.add(Dense(50, activation='relu'))
 
@@ -95,8 +96,8 @@ def get_model():
 	weight_init='glorot_normal'
 	opt = RMSprop(lr)
 	loss = 'mean_squared_error'
-	ROWS = 160
-	COLS = 320
+	ROWS = 80
+	COLS = 160
 	CHANNELS = 3
 
 	model = Sequential()
@@ -128,15 +129,15 @@ def get_model():
 
 
 
-data_file = 'data/data/TEST_IMG/driving_log.csv'
-image_path = 'data/data/'
+data_file = '/home/linfeng-zc/Documents/Udacity/CarND-Behavioral-Cloning/data/data/TEST_IMG/driving_log.csv'
+image_path = '/home/linfeng-zc/Documents/Udacity/CarND-Behavioral-Cloning/data/data/'
 num_epoch = 10
 batch_size = 32
 
 [train_lines, validation_lines] = get_train_validation_path(data_file, image_path, 0.2)
 
-model = get_model()
-#model.summary()
+model = get_nvidia_model()
+model.summary()
 
 #model.fit_generator(get_generator(train_lines, image_path, batch_size),
 #	nb_epoch=num_epoch, samples_per_epoch=len(train_lines), nb_val_samples=len(validation_lines),
@@ -145,14 +146,14 @@ model = get_model()
 model.fit_generator(get_generator(train_lines, image_path, batch_size),
 	nb_epoch=num_epoch, samples_per_epoch=len(train_lines))
 
-img1 = imread(image_path + 'IMG/center_2016_12_01_13_32_43_457.jpg')#.astype(np.float32)
+img1 = imread(image_path + 'IMG/center_2016_12_01_13_32_43_457.jpg').astype(np.float32)
 img2 = imread(image_path + 'IMG/center_2016_12_01_13_32_49_008.jpg').astype(np.float32)
-preprocessed_img1 = img1#preprocess(img1)
-preprocessed_img2 = img2#preprocess(img2)
+preprocessed_img1 = preprocess(img1)
+preprocessed_img2 = preprocess(img2)
 
 print(preprocessed_img1)
 
-cv2.imshow("img", img1)
+cv2.imshow("img", preprocessed_img2[:, :, 0])
 cv2.imshow("preprocessed_img", preprocessed_img1[ :, :, 0])
 cv2.waitKey(0)
 
