@@ -27,7 +27,7 @@ ROI_ROW = 60
 
 ROWS = 20
 COLS = 64
-CHANNELS = 1
+CHANNELS = 3
 
 
 # Convert one channel 2D image to 3D image with dimention (rows, cols, 1)
@@ -44,9 +44,8 @@ def flip_img(img):
 def preprocess(image):
 	# To YUV
 	img_yuv = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
-	
 	# Crop ROI and take Y channel 
-	img_roi = img_yuv[ROI_ROW:, :, 1]
+	img_roi = img_yuv[ROI_ROW:, :, :]
 		
 	# Resize image
 	resized_roi = cv2.resize(img_roi, (COLS, ROWS))
@@ -55,7 +54,7 @@ def preprocess(image):
 	resized_roi = np.float32(resized_roi)
 	resized_roi = (resized_roi - 128.0) / 128.0
 
-	return to_rank3(resized_roi)
+	return resized_roi
 
 def get_train_validation_path(data_file, image_path, validation_prob):
 	train_lines = []
@@ -92,7 +91,6 @@ def get_generator(lines, image_path, batch_size):
 				y_batch.append(y)
 
 				flipped = flip_img(preprocessed)
-				flipped = to_rank3(flipped)
 				X_batch.append(flipped)
 				y_batch.append(-y)
 			yield np.array(X_batch), np.array(y_batch)
