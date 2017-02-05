@@ -81,11 +81,9 @@ def get_generator(lines, image_path, batch_size):
 	while 1:
 		X_batch = []
 		y_batch = []
-		i = 0
-		for start_i in range(0, sample_size, batch_size):
+		for start_i in range(0, sample_size, batch_size/2):
 			#print("generate batch: ", i)
-			i = i + 1
-			end_i = start_i + batch_size
+			end_i = start_i + batch_size/2 
 			for line in lines[start_i:end_i]:
 				img, y = process_line(line, image_path)
 				preprocessed = preprocess(img)				
