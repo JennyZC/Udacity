@@ -17,7 +17,7 @@ from sklearn.model_selection import train_test_split
 #data_file = '/home/linfeng-zc/Documents/Udacity/CarND-Behavioral-Cloning/data/example_data/driving_log.csv'
 #image_path = '/home/linfeng-zc/Documents/Udacity/CarND-Behavioral-Cloning/data/data/'
 
-data_file = '/home/linfeng-zc/Documents/Udacity/CarND-Behavioral-Cloning/data/track_data/driving_log.csv'
+data_file = '/home/linfeng-zc/Documents/Udacity/CarND-Behavioral-Cloning/data/track_data_ii/driving_log.csv'
 image_path = ''
 
 NUM_EPOCHS = 10
@@ -31,19 +31,23 @@ CHANNELS = 1
 
 
 # Convert one channel 2D image to 3D image with dimention (rows, cols, 1)
-def toRank3(gray_image):
+def to_rank3(gray_image):
 	result = np.zeros((gray_image.shape[0], gray_image.shape[1], 1), dtype=gray_image.dtype)
 	result[:, :, 0] = gray_image
 	return result
+
+def flip_img(img):
+	flipped_img = cv2.flip(img, 1)
+	return flipped_img
 
 # Preprocessing images
 def preprocess(image):
 	# To YUV
 	img_yuv = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
-
-	# Crop ROI and take Y channel
-	img_roi = image[ROI_ROW:, :, 1]
-
+	
+	# Crop ROI and take Y channel 
+	img_roi = img_yuv[ROI_ROW:, :, 1]
+		
 	# Resize image
 	resized_roi = cv2.resize(img_roi, (COLS, ROWS))
 
@@ -51,7 +55,7 @@ def preprocess(image):
 	resized_roi = np.float32(resized_roi)
 	resized_roi = (resized_roi - 128.0) / 128.0
 
-	return toRank3(resized_roi)
+	return to_rank3(resized_roi)
 
 def get_train_validation_path(data_file, image_path, validation_prob):
 	train_lines = []
@@ -70,8 +74,7 @@ def get_train_validation_path(data_file, image_path, validation_prob):
 def process_line(line, image_path):
 	data = line.split(',')
 	img = imread(image_path + data[0]).astype(np.float32)
-	preprocessed_img = preprocess(img)
-	return preprocessed_img, data[3]
+	return img, float(data[3])
 
 def get_generator(lines, image_path, batch_size):
 	sample_size = len(lines) 
@@ -84,20 +87,26 @@ def get_generator(lines, image_path, batch_size):
 			i = i + 1
 			end_i = start_i + batch_size
 			for line in lines[start_i:end_i]:
-				x, y = process_line(line, image_path)
-				X_batch.append(x)
+				img, y = process_line(line, image_path)
+				preprocessed = preprocess(img)				
+				X_batch.append(preprocessed)
 				y_batch.append(y)
+
+				flipped = flip_img(preprocessed)
+				flipped = to_rank3(flipped)
+				X_batch.append(flipped)
+				y_batch.append(-y)
 			yield np.array(X_batch), np.array(y_batch)
 
 def get_nvidia_model():
 	model = Sequential()
 	
 	model.add(BatchNormalization(mode=2, axis=1, input_shape=(ROWS, COLS, CHANNELS)))
-	model.add(Convolution2D(24, 3, 3, border_mode='valid', activation='relu'))
+	model.add(Convolution2D(24, 5, 5, border_mode='valid', activation='relu'))
 
-	model.add(Convolution2D(36, 3, 3, border_mode='valid', activation='relu'))
+	model.add(Convolution2D(36, 5, 5, border_mode='valid', activation='relu'))
 
-	model.add(Convolution2D(48, 3, 3, border_mode='valid', activation='relu'))
+	model.add(Convolution2D(48, 5, 5, border_mode='valid', activation='relu'))
 
 	model.add(Convolution2D(64, 3, 3, border_mode='valid', activation='relu'))
 
@@ -177,7 +186,7 @@ if __name__ == '__main__':
 
 	model.fit_generator(get_generator(train_lines, image_path, BATCH_SIZE),
 		nb_epoch=NUM_EPOCHS, samples_per_epoch=len(train_lines), nb_val_samples=len(validation_lines),
-		validation_data=get_generator(validation_lines, image_path, BATCH_SIZE))
+		validation_data=get_generator(validation_lines, image_path, BATCH_SIZE), max_q_size=5)
 
 	#model.fit_generator(get_generator(train_lines, image_path, BATCH_SIZE), 
 	#	nb_epoch=NUM_EPOCHS, samples_per_epoch=len(train_lines), callbacks=None)
@@ -196,3 +205,4 @@ if __name__ == '__main__':
 	'''
 	
 	model.save('model.h5')
+	print("Saved model to disk")
