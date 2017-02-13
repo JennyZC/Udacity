@@ -200,8 +200,8 @@ def preprocess(image, mtx, dist):
 	undist = cv2.undistort(img, mtx, dist)
 	binary_img = pipline(undist)
 	perspective_matrix = get_perspective_transform()
-	warped_binary_img = perspective_transform(binary_img, perspective_matrix)
-	return warped_binary_img
+	binary_warped = perspective_transform(binary_img, perspective_matrix)
+	return binary_warped
 
 
 if __name__=="__main__":
@@ -219,15 +219,17 @@ if __name__=="__main__":
 	dist = np.array(dist_list)	
 
 	for image in test_images:
-
-		warped_binary_img = preprocess(image, mtx, dist)
-		histogram = np.sum(warped_binary_img[warped_binary_img.shape[0]/2:,:], axis=0)
-		
-		f, axarr = plt.subplots(1, 2, figsize=(24, 9))
-		f.tight_layout()
-		axarr[0].imshow(warped_binary_img, cmap='gray')
-		axarr[1].plot(histogram)
-		plt.show()
-
-		break
+		img = mpimg.imread(image)
+		undist = cv2.undistort(img, mtx, dist)
+		binary_img = pipline(undist)
+		perspective_matrix = get_perspective_transform()
+		binary_warped = perspective_transform(binary_img, perspective_matrix)
 			
+		f, axarr = plt.subplots(1, 3, figsize=(24, 9))
+		f.tight_layout()
+		axarr[0].imshow(img)
+		axarr[1].imshow(binary_img, cmap='gray')
+		axarr[2].imshow(binary_warped, cmap='gray')
+		
+		plt.show()
+		
