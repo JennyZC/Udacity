@@ -224,7 +224,7 @@ if __name__ == '__main__':
 		nb_epoch=NUM_EPOCHS, samples_per_epoch=len(train_lines), nb_val_samples=len(validation_lines),
 		validation_data=get_generator(validation_lines, image_path, BATCH_SIZE), max_q_size=5)
 
-	model.save('model.h5')
+	model.save('saved_modle/model.h5')
 	print("Saved model to disk")
 
 	#model.fit_generator(get_generator(train_lines, image_path, BATCH_SIZE), 
