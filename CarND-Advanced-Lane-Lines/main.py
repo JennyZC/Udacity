@@ -63,26 +63,27 @@ def process_image(img):
 	binary_warped = perspective_transform(binary_img, M)
 
 	# Fit line
-	left_fitx, right_fitx, ploty = fit_line(binary_warped)
+   	global left_line, right_line
+    	left_fitx, right_fitx, ploty = fit_line_splitter(binary_warped, left_line, right_line)
 
-	result = warp_pespective(undist, binary_warped, left_fitx, right_fitx, ploty, Minv)
+    	result = warp_pespective(undist, binary_warped, left_fitx, right_fitx, ploty, Minv)
 
-	return result
+    	return result
 
-if __name__=="__main__":
 
-	# Get lane binary image with color/gradient
-	'''
-	sample_image_path = ('/home/linfeng-zc/Documents/Udacity/CarND-Advanced-Lane-Lines/test_images/test6.jpg')
-	img = mpimg.imread(sample_image_path)
-	result = process_image(img)
-
-	f, axarr = plt.subplots(1, 2, figsize=(24, 9))
-	f.tight_layout()
-	axarr[0].imshow(result)
-	plt.show()
-	'''
-	white_output = 'project_video_result.mp4'
-	clip1 = VideoFileClip("project_video.mp4")
-	white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
-	white_clip.write_videofile(white_output, audio=False)
+# Get lane binary image with color/gradient
+'''
+sample_image_path = ('/home/linfeng-zc/Documents/Udacity/CarND-Advanced-Lane-Lines/test_images/test6.jpg')
+img = mpimg.imread(sample_image_path)
+result = process_image(img)
+f, axarr = plt.subplots(1, 2, figsize=(24, 9))
+f.tight_layout()
+axarr[0].imshow(result)
+plt.show()
+'''
+left_line = Line()
+right_line = Line()
+white_output = 'project_video_result.mp4'
+clip1 = VideoFileClip("project_video.mp4")
+white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
+white_clip.write_videofile(white_output, audio=False
