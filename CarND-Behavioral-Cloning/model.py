@@ -1,71 +1,62 @@
-import pickle, json, cv2
+import json, cv2
 import numpy as np
-import random
 from scipy.misc import imread
 from random import uniform
-from keras.layers import Input, Activation, Dropout, Dense, Flatten, BatchNormalization 
+from keras.layers import Input, Activation, Dropout, Dense, Flatten, Lambda
 from keras.models import Sequential, model_from_json, load_model
 from keras.layers.convolutional import Convolution2D
 from keras.layers.pooling import MaxPooling2D
 from keras.optimizers import RMSprop
 from keras.optimizers import Adam
-from sklearn.model_selection import train_test_split
 from preprocess import *
+import csv
+from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
 
-
-#data_file = '/home/linfeng-zc/Documents/Udacity/CarND-Behavioral-Cloning/data/example_data/driving_log.csv'
-#image_path = '/home/linfeng-zc/Documents/Udacity/CarND-Behavioral-Cloning/data/data/'
-
-data_file = '/home/linfeng-zc/Documents/Udacity/CarND-Behavioral-Cloning/data/track_data_new/driving_log.csv'
 
 NUM_EPOCHS = 10
 BATCH_SIZE = 8
 
-def get_train_validation_path(data_file, validation_prob):
-	train_lines = []
-	validation_lines = []
-	with open(data_file) as f:
-		for i, line in enumerate(f):
-			if i == 0:
-				continue
-			prob = uniform(0, 1)
-			if prob >= validation_prob:
-				train_lines.append(line.strip())
-			else:
-				validation_lines.append(line.strip())
-	return train_lines, validation_lines
-	
-def get_generator(lines, image_path, batch_size):
-	sample_size = len(lines)
+def load_samples(file_name):
+	samples = []
+	with open(file_name) as csvfile:
+		reader = csv.reader(csvfile)
+		for line in reader:
+			samples.append(line)
+	return samples
+
+def get_generator(samples, batch_size=32):
+	shuffle(samples)
+	sample_size = len(samples)
 	while 1:
 		X_batch = []
 		y_batch = []
-		half_batch_size = int(batch_size)
-		for start_i in range(0, sample_size, half_batch_size):
-			#print("generate batch: ", i)
-			end_i = start_i + half_batch_size 
-			for line in lines[start_i:end_i]:
-				image_tuples = process_line(line, image_path)
+		for start_i in range(0, sample_size, batch_size):
+			end_i = start_i + batch_size 
+			for line in samples[start_i:end_i]:
+				image_tuples = process_line(line)
 				for image_tuple in image_tuples:
-					img = image_tuple[0]
-					y = image_tuple[1]
-					preprocessed = preprocess(img)				
-					X_batch.append(preprocessed)
-					y_batch.append(y)
-
-					#flipped = flip_img(preprocessed)
-					#X_batch.append(flipped)
-					#y_batch.append(-y)
-			yield np.array(X_batch), np.array(y_batch)
+					preprocessed_image = preprocess(image_tuple[0])				
+					X_batch.append(preprocessed_image)
+					y_batch.append(image_tuple[1])
+					
+					'''
+					flipped = flip_img(preprocessed)
+					X_batch.append(flipped)
+					y_batch.append(-y)
+					'''
+					X_train = np.array(X_batch)
+					y_train = np.array(y_batch)
+			yield shuffle(X_train, y_train)
 
 def get_nvidia_model():
 
 	kernel_size = (3, 3)
 	
 	model = Sequential()
-	
-	model.add(BatchNormalization(mode=2, axis=1, input_shape=(ROWS, COLS, CHANNELS)))
 
+	model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape=(ROWS, COLS, CHANNELS)))
+	
 	'''
 	24, 36, 48, 64, 64
 	'''
@@ -151,8 +142,8 @@ def get_model():
 	# Starting with the convolutional layer
 	# The first layer will turn 1 channel into 16 channels
 	model.add(Convolution2D(nb_filters1, kernel_size[0], kernel_size[1],
-	                        border_mode='valid',
-	                        input_shape=(ROWS, COLS, CHANNELS)))
+				border_mode='valid',
+				input_shape=(ROWS, COLS, CHANNELS)))
 	# Applying ReLU
 	model.add(Activation('relu'))
 	# The second conv layer will convert 16 channels into 8 channels
@@ -192,8 +183,8 @@ def get_model():
 	model.add(Dense(1))
 
 	model.compile(loss='mean_squared_error',
-              optimizer=Adam(),
-              metrics=['accuracy'])
+	      optimizer=Adam(),
+	      metrics=['accuracy'])
 
 	return model
 
@@ -227,17 +218,19 @@ def three_imgs_test():
 	print ('steering angle: ', steering_angle1, steering_angle2)
 
 if __name__ == '__main__':
-	[train_lines, validation_lines] = get_train_validation_path(data_file, 0.2)
+	file_name = '/home/linfeng-zc/Documents/Udacity/CarND-Behavioral-Cloning/data/track_data_new/driving_log.csv'
+	samples = load_samples(file_name)
 	
-	random.shuffle(train_lines) 
-	random.shuffle(validation_lines) 
+	train_samples, test_samples = train_test_split(samples, test_size=0.1)
+	train_samples, validation_samples = train_test_split(train_samples, test_size=0.2)
+	
+	batch_size = 8
 
-	model = get_nvidia_model()
-	#model = get_model()
-	#model.summary()
+	#test generator
+	train_generator = get_generator(train_samples, batch_size)
+	validation_generator = get_generator(validation_samples, batch_size)
 	
-	''' test generator
-	generator = get_generator(train_lines, image_path, 1)
+	'''
 	x, y = next(generator)
 	print("x: ", x.shape)
 	print("y: ", y)
@@ -247,15 +240,17 @@ if __name__ == '__main__':
 		cv2.namedWindow("test_generator", cv2.WINDOW_NORMAL)
 		cv2.imshow("test_generator", image[:, :, 0])
 		cv2.waitKey(0)
+	'''
+	model = get_nvidia_model()
+	#model = get_model()
+	model.summary()
 
-	'''	
-
-	model.fit_generator(get_generator(train_lines, image_path, BATCH_SIZE),
-		nb_epoch=NUM_EPOCHS, samples_per_epoch=3*len(train_lines), nb_val_samples=3*len(validation_lines),
-		validation_data=get_generator(validation_lines, image_path, BATCH_SIZE), max_q_size=5)
+	model.fit_generator(train_generator, nb_epoch=NUM_EPOCHS, samples_per_epoch=len(train_samples), 
+		validation_data=validation_generator, nb_val_samples=len(validation_samples), max_q_size=5)
 
 	model.save('saved_model/model.h5')
 	print("Saved model to disk")
 
-	#model.fit_generator(get_generator(train_lines, image_path, BATCH_SIZE), 
+	#model.fit_generator(get_generator(train_lines, BATCH_SIZE), 
 	#	nb_epoch=NUM_EPOCHS, samples_per_epoch=len(train_lines), callbacks=None)
+
