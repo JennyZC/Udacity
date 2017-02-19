@@ -6,6 +6,49 @@ from color_gradient_threshold import preprocess
 import glob
 import json
 
+def fit_line_splitter(binary_warped, left_line, right_line):
+	last_n = 5
+	if not left_line.detected or not right_line.detected:
+		left_fit, right_fit = fit_line(binary_warped)
+		left_line.detected = True
+		right_line.detected = True
+	else:
+		left_fit, right_fit = fit_line_quick(binary_warped, left_line.current_fit, right_line.current_fit)
+		if not left_fit or not right_fit:
+			left_fit, right_fit = fit_line(binary_warped)
+
+	if not left_fit or not right_fit:
+		left_fit = left_line.best_fit
+		right_fit = right_line.best_fit
+
+
+	# Update current and previous coefficient difference
+	left_line.diffs = np.absolute(left_fit - left_line.current_fit)
+	right_line.diffs = np.absolute(right_fit - right_line.current_fit)
+
+	# Update current coefficient
+	left_line.current_fit = left_fit
+	right_line.current_fit = right_fit
+
+	# Update last n coefficient
+	if len(left_line.recent_fit) == last_n:
+		left_line.recent_fit.pop(0)
+		right_line.recent_fit.pop(0)
+
+	left_line.recent_fit.append(left_fit)
+	right_line.recent_fit.append(right_fit)
+	
+	# Update best fit
+	left_line.best_fit = np.average(np.asarray(left_line.recent_fit))
+	right_line.best_fit = np.average(np.asarray(right_line.recent_fit))
+
+	# Generate x and y values for plotting
+	ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0] )
+	left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
+	right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+
+	return left_fitx, right_fitx, ploty
+
 def fit_line(binary_warped):
 	# Assuming you have created a warped binary image called "binary_warped"
 	# Take a histogram of the bottom half of the image
@@ -75,12 +118,12 @@ def fit_line(binary_warped):
 	left_fit = np.polyfit(lefty, leftx, 2)
 	right_fit = np.polyfit(righty, rightx, 2)
 
+	'''
 	# Generate x and y values for plotting
 	ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0] )
 	left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
 	right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
 	
-	'''
 	out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
 	out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
 	plt.imshow(out_img)
@@ -89,7 +132,7 @@ def fit_line(binary_warped):
 	plt.xlim(0, 1280)
 	plt.ylim(720, 0)
 	'''
-	return left_fitx, right_fitx, ploty
+	return left_fit, right_fit
 
 def fit_line_quick(binary_warped):
 	# Assume you now have a new warped binary image
@@ -110,12 +153,15 @@ def fit_line_quick(binary_warped):
 	# Fit a second order polynomial to each
 	left_fit = np.polyfit(lefty, leftx, 2)
 	right_fit = np.polyfit(righty, rightx, 2)
+	
+	'''
 	# Generate x and y values for plotting
 	ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0] )
 	left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
 	right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+	'''
 
-	return left_fitx, right_fitx, ploty
+	return left_fit, right_fit
 
 def warp_pespective(undist, binary_warped, left_fitx, right_fitx, ploty, Minv):
 	# Create an image to draw the lines on
