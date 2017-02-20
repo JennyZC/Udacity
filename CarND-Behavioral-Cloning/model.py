@@ -40,11 +40,12 @@ def get_generator(samples, batch_size=32):
 					X_batch.append(preprocessed_image)
 					y_batch.append(image_tuple[1])
 					
-					'''
-					flipped = flip_img(preprocessed)
+					'''	
+					flipped = flip_img(preprocessed_image)
 					X_batch.append(flipped)
-					y_batch.append(-y)
+					y_batch.append(-image_tuple[1])
 					'''
+
 					X_train = np.array(X_batch)
 					y_train = np.array(y_batch)
 			yield shuffle(X_train, y_train)
@@ -59,31 +60,35 @@ def get_nvidia_model():
 	
 	'''
 	24, 36, 48, 64, 64
+	4, 6, 8, 16, 16
 	'''
+	model.add(Convolution2D(8, kernel_size[0], kernel_size[1], border_mode='valid', activation='relu'))
+
+	model.add(Convolution2D(16, kernel_size[0], kernel_size[1], border_mode='valid', activation='relu'))
+
 	model.add(Convolution2D(24, kernel_size[0], kernel_size[1], border_mode='valid', activation='relu'))
 
-	model.add(Convolution2D(36, kernel_size[0], kernel_size[1], border_mode='valid', activation='relu'))
+	model.add(Convolution2D(32, kernel_size[0], kernel_size[1],  border_mode='valid', activation='relu'))
+	
+	#model.add(Dropout(0.25))
 
-	model.add(Convolution2D(48, kernel_size[0], kernel_size[1], border_mode='valid', activation='relu'))
-
-	model.add(Convolution2D(64, kernel_size[0], kernel_size[1],  border_mode='valid', activation='relu'))
-
-	model.add(Convolution2D(64, kernel_size[0], kernel_size[1],  border_mode='valid', activation='relu'))
+	model.add(Convolution2D(32, kernel_size[0], kernel_size[1],  border_mode='valid', activation='relu'))
 
 
 	model.add(Flatten())
 
 	'''
 	1164, 500, 100, 50, 10, 1
+	100, 50, 20, 10, 1
 	'''
-	model.add(Dense(1164, activation='relu'))
-
-	model.add(Dense(500, activation='relu'))
-
 	model.add(Dense(100, activation='relu'))
+
+	model.add(Dropout(0.25))
 
 	model.add(Dense(50, activation='relu'))
 
+	model.add(Dense(20, activation='relu'))
+	
 	model.add(Dense(10, activation='relu'))
 
 	model.add(Dense(1, activation='linear'))
@@ -222,13 +227,18 @@ if __name__ == '__main__':
 	samples = load_samples(file_name)
 	
 	train_samples, test_samples = train_test_split(samples, test_size=0.1)
-	train_samples, validation_samples = train_test_split(train_samples, test_size=0.2)
+	train_samples, validation_samples = train_test_split(train_samples, test_size=0.25)
+
+	print("train samples: ",  len(train_samples))
+	print("validation samples: ", len(validation_samples))
+	print("test samples: ", len(test_samples))
 	
-	batch_size = 8
+	batch_size = 32
 
 	#test generator
 	train_generator = get_generator(train_samples, batch_size)
 	validation_generator = get_generator(validation_samples, batch_size)
+	test_generator = get_generator(test_samples, batch_size)
 	
 	'''
 	x, y = next(generator)
@@ -245,12 +255,25 @@ if __name__ == '__main__':
 	#model = get_model()
 	model.summary()
 
-	model.fit_generator(train_generator, nb_epoch=NUM_EPOCHS, samples_per_epoch=len(train_samples), 
-		validation_data=validation_generator, nb_val_samples=len(validation_samples), max_q_size=5)
+	augement_factor = 3
+	history_object = model.fit_generator(train_generator, nb_epoch=NUM_EPOCHS, samples_per_epoch=augement_factor * len(train_samples), 
+		validation_data=validation_generator, nb_val_samples=augement_factor*len(validation_samples), max_q_size=5)
 
 	model.save('saved_model/model.h5')
 	print("Saved model to disk")
 
-	#model.fit_generator(get_generator(train_lines, BATCH_SIZE), 
-	#	nb_epoch=NUM_EPOCHS, samples_per_epoch=len(train_lines), callbacks=None)
+	print (model.evaluate_generator(test_generator, val_samples=augement_factor*len(test_samples), max_q_size=5))
 
+	import matplotlib.pyplot as plt
+
+	### print the keys contained in the history object
+	print(history_object.history.keys())
+
+	### plot the training and validation loss for each epoch
+	plt.plot(history_object.history['loss'])
+	plt.plot(history_object.history['val_loss'])
+	plt.title('model mean squared error loss')
+	plt.ylabel('mean squared error loss')
+	plt.xlabel('epoch')
+	plt.legend(['training set', 'validation set'], loc='upper right')
+	plt.show()

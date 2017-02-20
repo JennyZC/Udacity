@@ -44,11 +44,11 @@ def preprocess(image):
 
 def process_line(line):
 	img_center = cv2.imread(line[0])
-	#img_left = cv2.imread(line[1])
-	#img_right = cv2.imread(line[2])
-	correction = 0.02
-	#return [(img_center, float(line[3])), (img_left, float(line[3]) + correction), (img_right, float(line[3]) - correction)]
-	return [(img_center, float(line[3]))]
+	img_left = cv2.imread(line[1])
+	img_right = cv2.imread(line[2])
+	correction = 0.03
+	return [(img_center, float(line[3])), (img_left, float(line[3]) + correction), (img_right, float(line[3]) - correction)]
+	#return [(img_center, float(line[3]))]
 
 if __name__ == '__main__':
 	pass
