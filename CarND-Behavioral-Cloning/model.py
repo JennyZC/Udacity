@@ -44,7 +44,7 @@ def get_generator(samples, batch_size=32):
 			yield shuffle(X_train, y_train)
 
 # Main model
-def get_nvidia_model():
+def get_model():
 	
 	# Converlution kernal size
 	kernel_size = (3, 3)
@@ -117,7 +117,7 @@ if __name__ == '__main__':
 	test_generator = get_generator(test_samples, BATCH_SIZE)
 	
 	# Get model
-	model = get_nvidia_model()
+	model = get_model()
 	model.summary()
 
 	# Train model
