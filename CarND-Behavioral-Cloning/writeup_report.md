@@ -18,13 +18,16 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./examples/placeholder.png "Model Visualization"
-[image2]: ./examples/placeholder.png "Grayscaling"
-[image3]: ./examples/placeholder_small.png "Recovery Image"
-[image4]: ./examples/placeholder_small.png "Recovery Image"
-[image5]: ./examples/placeholder_small.png "Recovery Image"
-[image6]: ./examples/placeholder_small.png "Normal Image"
-[image7]: ./examples/placeholder_small.png "Flipped Image"
+[image1]: ./example_images/model.png "Model Visualization"
+[image2]: ./example_images/Y_channel.png "Y channel"
+[image3]: ./example_images/cropped_image.png "Cropped Image"
+[image4]: ./example_images/resized_image.png "Resized Image"
+[image5]: ./example_images/center_image.png "Center Image"
+[image6]: ./example_images/normal_recovery.png "Normal Recovery"
+[image7]: ./example_images/bridge_recovery.png "Bridge Recovery"
+[image8]: ./example_images/hazard_recovery.png "Hazard Recovery"
+[image9]: ./example_images/left_right_images.png "Left Right Images"
+[image10]: ./examples_images/history.png "Training History"
 
 ## Rubric Points
 ###Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
@@ -101,36 +104,53 @@ At the end of the process, the vehicle is able to drive autonomously around the 
 
 ####2. Final Model Architecture
 
-The final model architecture (model.py lines 18-24) consisted of a convolution neural network with the following layers and layer sizes ...
+The final model architecture (model.py lines 47-88) consisted of a convolution neural network with the following layers and layer sizes
 
-Here is a visualization of the architecture (note: visualizing the architecture is optional according to the project rubric)
+Here is a visualization of the architecture:
 
 ![alt text][image1]
 
 ####3. Creation of the Training Set & Training Process
 
-To capture good driving behavior, I first recorded two laps on track one using center lane driving. Here is an example image of center lane driving:
+Preprocessing:
+
+Get the hint from Traffic Sign Recognition Project, I first convert images from RGB to YUV, and only use Y channel to train the model, the performance is better than using three channel and speed is faster:
 
 ![alt text][image2]
 
-I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to .... These images show what a recovery looks like starting from ... :
+By checking the images, I find that top part of the image captures trees, mountains and sky, and the bottom part of the image captures the hood of the car. These infomation will distract and slow down my model. So I cropped each image to focus only on the road part:
 
 ![alt text][image3]
+
+After cropping the images, my GPU is still not able to train the model even with generator. So I resize the image by 1/5:
+
 ![alt text][image4]
+
+To capture good driving behavior, I first recorded ten laps on track one using center lane driving. For better visualization, I'll show the image before resize:
+
 ![alt text][image5]
 
-Then I repeated this process on track two in order to get more data points.
-
-To augment the data sat, I also flipped images and angles thinking that this would ... For example, here is an image that has then been flipped:
+I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to correct itself when it deviates from the center. I record some recovery along normal track:
 
 ![alt text][image6]
+
+And Special cases:
+
 ![alt text][image7]
+![alt text][image8]
 
-Etc ....
+Besides record recovery images, I also used images from left and right cameras. For left images, I added 0.05 correction to the angle, and for the right images, I substruct 0.05 correction:
 
-After the collection process, I had X number of data points. I then preprocessed this data by ...
+![alt text][image9]
 
+To augment the data set, I also flipped images vertically. Because the curve part in track one is mostly curve to the right. Adding flipped images may improve the performance on the last left turn. But I got no luck. So instead, I record more data on the left turn. And the robot is able to pass the left turn smoothly.
+
+After the collection process, I had 27826 number of data points.
 
 I finally randomly shuffled the data set and put 10% of the data into a test set and 25% into a validation set.
 
-I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was Z as evidenced by ... I used an adam optimizer so that manually training the learning rate wasn't necessary.
+I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was 10 as evidenced by the training and validation loss tend to stablize. Here's the training and validation loss history:
+
+![alt text][image10]
+
+I used an adam optimizer so that manually training the learning rate wasn't necessary.
