@@ -27,7 +27,7 @@ The goals / steps of this project are the following:
 [image7]: ./example_images/bridge_recovery.png "Bridge Recovery"
 [image8]: ./example_images/hazard_recovery.png "Hazard Recovery"
 [image9]: ./example_images/left_right_images.png "Left Right Images"
-[image10]: ./examples_images/history.png "Training History"
+[image10]: ./example_images/history.png "Training History"
 
 ## Rubric Points
 ###Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
