@@ -56,8 +56,11 @@ def process_line(line):
 	img_right = cv2.imread(line[2])
 	
 	# Pair images with angle to turn
-	correction = 0.03
-	return [(img_center, float(line[3])), (img_left, float(line[3]) + correction), (img_right, float(line[3]) - correction)]
+	correction = 0.1
+	center_angle = float(line[3])
+	left_angle = center_angle + correction
+	right_angle = center_angle - correction
+	return [(img_center, center_angle), (img_left, left_angle), (img_right, right_angle)]
 
 if __name__ == '__main__':
 	pass

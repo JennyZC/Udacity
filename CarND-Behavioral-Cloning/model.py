@@ -9,7 +9,7 @@ from sklearn.utils import shuffle
 import matplotlib.pyplot as plt
 
 NUM_EPOCHS = 10
-BATCH_SIZE = 8
+BATCH_SIZE = 16
 
 # Load image file names
 def load_samples(file_name):
@@ -40,7 +40,6 @@ def get_generator(samples, batch_size=32):
 					
 					X_train = np.array(X_batch)
 					y_train = np.array(y_batch)
-
 			yield shuffle(X_train, y_train)
 
 # Main model
@@ -71,7 +70,7 @@ def get_model():
 	# Fully connected layers with neuron number: 100, 50, 20, 10, 1
 	model.add(Dense(100, activation='relu'))
 
-	# Add dropout to avoid overfitting
+	# Add dropout to reduce overfitting
 	model.add(Dropout(0.25))
 
 	model.add(Dense(50, activation='relu'))
@@ -102,10 +101,10 @@ def visualize_loss(history_object):
 	plt.show()
 
 if __name__ == '__main__':
-
 	# Load image file names to samples
 	file_name = '/home/linfeng-zc/Documents/Udacity/CarND-Behavioral-Cloning/data/track_data_new/driving_log.csv'
 	samples = load_samples(file_name)
+	shuffle(samples)	
 
 	# Split train, validation and test data file path	
 	train_samples, test_samples = train_test_split(samples, test_size=0.1)

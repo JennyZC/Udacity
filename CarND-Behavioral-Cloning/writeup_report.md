@@ -60,7 +60,7 @@ The model.py file contains the code for training and saving the convolution neur
 
 My model consists of five convolutional layers with 3x3 filter sizes and depths 8, 16, 24, 32, 32 (model.py lines 58-66). 
 
-Each convolutional layer is followed with RELU activation to introduce nonlinearity.
+Each convolutional layer is followed with RELU activation to introduce non-linearity.
 
 The model has five fully connected layer with 100, 50, 20, 10, 1 neurons (model.py lines 72-83). 
 
@@ -118,7 +118,7 @@ Get the hint from Traffic Sign Recognition Project, I first convert images from 
 
 ![alt text][image2]
 
-By checking the images, I find that top part of the image captures trees, mountains and sky, and the bottom part of the image captures the hood of the car. These infomation will distract and slow down my model. So I cropped each image to focus only on the road part:
+By checking the images, I find that top part of the image captures trees, mountains and sky, and the bottom part of the image captures the hood of the car. These information will distract and slow down my model. So I cropped each image to focus only on the road part:
 
 ![alt text][image3]
 
@@ -139,7 +139,7 @@ And Special cases:
 ![alt text][image7]
 ![alt text][image8]
 
-Besides record recovery images, I also used images from left and right cameras. For left images, I added 0.05 correction to the angle, and for the right images, I substruct 0.05 correction:
+Besides record recovery images, I also used images from left and right cameras. For left images, I added 0.1 correction to the angle, and for the right images, I subtract 0.1 correction:
 
 ![alt text][image9]
 
@@ -149,8 +149,11 @@ After the collection process, I had 27826 number of data points.
 
 I finally randomly shuffled the data set and put 10% of the data into a test set and 25% into a validation set.
 
-I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was 10 as evidenced by the training and validation loss tend to stablize. Here's the training and validation loss history:
+I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was 10 as evidenced by the training and validation loss tend to stabilize. Here's the training and validation loss history:
 
 ![alt text][image10]
 
 I used an adam optimizer so that manually training the learning rate wasn't necessary.
+
+Here's the link to my successful run video:
+https://youtu.be/N-EutQSFQOI
