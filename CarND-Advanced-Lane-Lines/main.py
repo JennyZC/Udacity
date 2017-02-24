@@ -6,10 +6,13 @@ import glob
 import json
 import cv2
 import numpy as np
-import Line
+from Line import Line
 from camera_calibration import *
 from color_gradient_threshold import *
 from fit_lines import *
+
+left_line = Line()
+right_line = Line()
 
 def calibrate(calib_image_path, calib_json, camera_matrix, dist_coeff):
 	# check if camera parameters exists
@@ -62,14 +65,14 @@ def process_image(img):
 	undist = cv2.undistort(img, mtx, dist)
 	binary_img = pipline(undist)
 	binary_warped = perspective_transform(binary_img, M)
-
+	
 	# Fit line
-   	global left_line, right_line
-    	left_fitx, right_fitx, ploty = fit_line_splitter(binary_warped, left_line, right_line)
+	global left_line, right_line
+	left_fitx, right_fitx, ploty = fit_line_splitter(binary_warped, left_line, right_line)
 
-    	result = warp_pespective(undist, binary_warped, left_fitx, right_fitx, ploty, Minv)
+	result = warp_pespective(undist, binary_warped, left_fitx, right_fitx, ploty, Minv)
 
-    	return result
+	return result
 
 
 # Get lane binary image with color/gradient
@@ -82,9 +85,7 @@ f.tight_layout()
 axarr[0].imshow(result)
 plt.show()
 '''
-left_line = Line()
-right_line = Line()
 white_output = 'project_video_result.mp4'
 clip1 = VideoFileClip("project_video.mp4")
 white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
-white_clip.write_videofile(white_output, audio=False
+white_clip.write_videofile(white_output, audio=False)

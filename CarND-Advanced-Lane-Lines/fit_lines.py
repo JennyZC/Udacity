@@ -14,10 +14,10 @@ def fit_line_splitter(binary_warped, left_line, right_line):
 		right_line.detected = True
 	else:
 		left_fit, right_fit = fit_line_quick(binary_warped, left_line.current_fit, right_line.current_fit)
-		if not left_fit or not right_fit:
+		if not left_fit.all() or not right_fit.all():
 			left_fit, right_fit = fit_line(binary_warped)
 
-	if not left_fit or not right_fit:
+	if not left_fit.all() or not right_fit.all():
 		left_fit = left_line.best_fit
 		right_fit = right_line.best_fit
 
@@ -41,7 +41,7 @@ def fit_line_splitter(binary_warped, left_line, right_line):
 	# Update best fit
 	left_line.best_fit = np.average(np.asarray(left_line.recent_fit))
 	right_line.best_fit = np.average(np.asarray(right_line.recent_fit))
-
+	
 	# Generate x and y values for plotting
 	ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0] )
 	left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
@@ -118,12 +118,11 @@ def fit_line(binary_warped):
 	left_fit = np.polyfit(lefty, leftx, 2)
 	right_fit = np.polyfit(righty, rightx, 2)
 
-	'''
 	# Generate x and y values for plotting
 	ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0] )
 	left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
 	right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
-	
+	'''
 	out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
 	out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
 	plt.imshow(out_img)
@@ -134,7 +133,7 @@ def fit_line(binary_warped):
 	'''
 	return left_fit, right_fit
 
-def fit_line_quick(binary_warped):
+def fit_line_quick(binary_warped, left_fit, right_fit):
 	# Assume you now have a new warped binary image
 	# from the next frame of video (also called "binary_warped")
 	# It's now much easier to find line pixels!
@@ -180,6 +179,8 @@ def warp_pespective(undist, binary_warped, left_fitx, right_fitx, ploty, Minv):
 	newwarp = cv2.warpPerspective(color_warp, Minv, (undist.shape[1], undist.shape[0]))
 	# Combine the result with the original image
 	result = cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
+
+	#plt.imshow(result)
 
 	return result
 

@@ -1,3 +1,5 @@
+import numpy as np
+
 class Line():
     def __init__(self):
         # was the line detected in the last iteration?
@@ -11,7 +13,7 @@ class Line():
         # polynomial coefficients for the most recent fit
         self.current_fit = [np.array([False])]
         # polynomial coefficients for the last n fit
-        self.recent_fit = [np.array([0, 0, 0], dtypr='float')]
+        self.recent_fit = [np.array([0, 0, 0], dtype='float')]
         # radius of curvature of the line in some units
         self.radius_of_curvature = None
         # distance in meters of vehicle center from the line
