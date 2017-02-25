@@ -8,16 +8,22 @@ import json
 
 def fit_line_splitter(binary_warped, left_line, right_line):
 	last_n = 5
+	ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0] )
+        curvature_threshold = 0.1
 	if not left_line.detected or not right_line.detected:
 		left_fit, right_fit = fit_line(binary_warped)
 		left_line.detected = True
 		right_line.detected = True
 	else:
 		left_fit, right_fit = fit_line_quick(binary_warped, left_line.current_fit, right_line.current_fit)
-		if not left_fit.all() or not right_fit.all():
+		left_fit.calculate(ploty)
+                right_fit.calculate(ploty)
+		if not left_fit.all() or not right_fit.all() or (right_fit - left_fit)/left_fit > curvature_threshold:
 			left_fit, right_fit = fit_line(binary_warped)
+			left_fit.calculate(ploty)
+                        right_fit.calculate(ploty)
 
-	if not left_fit.all() or not right_fit.all():
+	if not left_fit.all() or not right_fit.all() or (right_fit - left_fit)/left_fit > curvature_threshold:
 		left_fit = left_line.best_fit
 		right_fit = right_line.best_fit
 
