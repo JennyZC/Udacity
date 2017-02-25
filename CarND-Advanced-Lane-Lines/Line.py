@@ -24,3 +24,9 @@ class Line():
         self.allx = None
         # y values for detected line pixels
         self.ally = None
+
+    def calculate(ploty):
+        y_eval = np.max(ploty)
+        curverad = ((1 + (2*self.current_fit[0]*y_eval + self.current_fit[1])**2)**1.5) / np.absolute(2*self.current_fit[0])
+        print("Radius of Curvature: ", curverad)
+        self.radius_of_curvature = curverad
