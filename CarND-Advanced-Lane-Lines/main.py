@@ -76,17 +76,16 @@ def process_image(img):
 	global left_line, right_line
 	left_fitx, right_fitx, ploty, curverad, offset = fit_line_splitter(binary_warped, left_line, right_line)
 
-    	result = warp_pespective(undist, binary_warped, left_fitx, right_fitx, ploty, Minv)
+	result = warp_pespective(undist, binary_warped, left_fitx, right_fitx, ploty, Minv)
 
-    	cv2.putText(result, "Radius of Curvature: " + str(curverad) + "(m).", (20, 40), front, 4, (255,255,255), 2, cv2.LINE_AA)
-    	if offset < 0:
-        	cv2.putText(result, "Vehicle is  " + str(abs(offset)) + "(m) right of center.", (20, 80), front, 4, (255,255,255), 2, cv2.LINE_AA)
-    	else if offset > 0:
-        	cv2.putText(result, "Vehicle is  " + str(abs(offset)) + "(m) left of center.", (20, 80), front, 4, (255,255,255), 2, cv2.LINE_AA)
-   	else:
-        	cv2.putText(result, "Vehicle is right in the center.", (20, 80), front, 4, (255,255,255), 2, cv2.LINE_AA)
-
-    	return result
+	cv2.putText(result, "Radius of Curvature: " + str(curverad) + "(m).", (20, 40), front, 4, (255,255,255), 2, cv2.LINE_AA)
+	if offset < 0:
+		cv2.putText(result, "Vehicle is  " + str(abs(offset)) + "(m) right of center.", (20, 80), front, 4, (255,255,255), 2, cv2.LINE_AA)
+	elif offset > 0:
+		cv2.putText(result, "Vehicle is  " + str(abs(offset)) + "(m) left of center.", (20, 80), front, 4, (255,255,255), 2, cv2.LINE_AA)
+	else:
+		cv2.putText(result, "Vehicle is right in the center.", (20, 80), front, 4, (255,255,255), 2, cv2.LINE_AA)
+	return result
 
 
 # Get lane binary image with color/gradient

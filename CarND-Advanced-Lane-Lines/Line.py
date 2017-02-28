@@ -6,8 +6,8 @@ class Line():
 		self.detected = False
 		# x values of the last n fits of the line
 		self.recent_xfitted = []
-		# average x values of the fitted line over the last n iterations
-		self.bestx = None
+		# current x values of the fitted line over the last n iterations
+		self.currentx = None
 		# polynomial coefficients averaged over the last n iterations
 		self.best_fit = None
 		# polynomial coefficients for the most recent fit
@@ -25,7 +25,7 @@ class Line():
 		# y values for detected line pixels
 		self.ally = None
 
-	def calculate_roc(ploty):
+	def calculate(self, ploty):
 		y_eval = np.max(ploty)
 
 		# Define conversions in x and y from pixels space to meters
@@ -33,7 +33,7 @@ class Line():
 		xm_per_pix = 3.7/700 # meters per pixel in x dimension
 
 		# Fit new polynomials to x,y in world space
-		fit_cr = np.polyfit(ploty*ym_per_pix, self.bestx*xm_per_pix, 2)
+		fit_cr = np.polyfit(ploty*ym_per_pix, self.currentx*xm_per_pix, 2)
 
 		# Calculate the new radii of curvature
 		curverad = ((1 + (2*fit_cr[0]*y_eval*ym_per_pix + fit_cr[1])**2)**1.5) / np.absolute(2*fit_cr[0])

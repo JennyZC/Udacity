@@ -17,23 +17,28 @@ def fit_line_splitter(binary_warped, left_line, right_line):
 	ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
 	curvature_threshold = 0.1
 	if not left_line.detected or not right_line.detected:
-		left_fit, right_fit = fit_line(binary_warped)
+		left_fit, right_fit, leftx, rightx = fit_line(binary_warped)
 		left_line.detected = True
 		right_line.detected = True
-		left_line.calculate(ploty, left_fit)
-		right_line.calculate(ploty, right_fit)
+		left_line.currentx = leftx
+		right_line.currentx = rightx
+		left_line.calculate(ploty)
+		right_line.calculate(ploty)
 	else:
-		left_fit, right_fit = fit_line_quick(binary_warped, left_line.current_fit, right_line.current_fit)
+		left_fit, right_fit, leftx, rightx = fit_line_quick(binary_warped, left_line.current_fit, right_line.current_fit)
 		
 		if left_fit.any() and right_fit.any():
-			left_line.calculate(ploty, left_fit)
-			right_line.calculate(ploty, right_fit)
+			left_line.currentx = leftx
+			right_line.currentx = rightx
+			left_line.calculate(ploty)
+			right_line.calculate(ploty)
 		
 		if not left_fit.all() or not right_fit.all() or (abs(right_line.radius_of_curvature - left_line.radius_of_curvature)/left_line.radius_of_curvature > curvature_threshold):
 			left_fit = left_line.best_fit
 			right_fit = right_line.best_fit
-			left_line.calculate(ploty, left_fit)
-			right_line.calculate(ploty, right_fit)
+			left_line.calculate(ploty)
+			right_line.calculate(ploty)
+		
 
 	# Update current and previous coefficient difference
 	left_line.diffs = np.absolute(left_fit - left_line.current_fit)
@@ -62,8 +67,8 @@ def fit_line_splitter(binary_warped, left_line, right_line):
 	right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
 
 	offset = calcualte_pos(left_fitx, right_fitx, binary_warped.shape[1]/2)
-    	curverad = (left_line.radius_of_curvature + right_line.radius_of_curvature)/2
-    	return left_fitx, right_fitx, ploty, curverad, offset
+	curverad = (left_line.radius_of_curvature + right_line.radius_of_curvature)/2
+	return left_fitx, right_fitx, ploty, curverad, offset
 
 def fit_line(binary_warped):
 	# Assuming you have created a warped binary image called "binary_warped"
@@ -151,7 +156,7 @@ def fit_line(binary_warped):
 	plt.xlim(0, 1280)
 	plt.ylim(720, 0)
 	'''
-	return left_fit, right_fit
+	return left_fit, right_fit, leftx, rightx
 
 def fit_line_quick(binary_warped, left_fit, right_fit):
 	# Assume you now have a new warped binary image
@@ -184,7 +189,7 @@ def fit_line_quick(binary_warped, left_fit, right_fit):
 	right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
 	'''
 
-	return left_fit, right_fit
+	return left_fit, right_fit, leftx, rightx
 
 def warp_pespective(undist, binary_warped, left_fitx, right_fitx, ploty, Minv):
 	# Create an image to draw the lines on
