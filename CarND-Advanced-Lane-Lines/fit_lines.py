@@ -6,6 +6,12 @@ from color_gradient_threshold import preprocess
 import glob
 import json
 
+def calcualte_pos(left_fitx, right_fitx, center):
+	mid = left_fitx[-1] + (right_fitx[-1] - left_fitx[-1])/2
+	offset = center - mid
+	xm_per_pix = 3.7/700
+	return offset*xm_per_pix
+
 def fit_line_splitter(binary_warped, left_line, right_line):
 	last_n = 5
 	ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
@@ -55,7 +61,9 @@ def fit_line_splitter(binary_warped, left_line, right_line):
 	left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
 	right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
 
-	return left_fitx, right_fitx, ploty
+	offset = calcualte_pos(left_fitx, right_fitx, binary_warped.shape[1]/2)
+    	curverad = (left_line.radius_of_curvature + right_line.radius_of_curvature)/2
+    	return left_fitx, right_fitx, ploty, curverad, offset
 
 def fit_line(binary_warped):
 	# Assuming you have created a warped binary image called "binary_warped"
