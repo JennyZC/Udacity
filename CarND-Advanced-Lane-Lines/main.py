@@ -13,6 +13,7 @@ from fit_lines import *
 
 left_line = Line()
 right_line = Line()
+i = 0
 
 def calibrate(calib_image_path, calib_json, camera_matrix, dist_coeff):
 	# check if camera parameters exists
@@ -37,7 +38,12 @@ def calibrate(calib_image_path, calib_json, camera_matrix, dist_coeff):
 	return mtx, dist
 
 def process_image(img):
-
+	'''
+	global i
+	i = i + 1
+	if i < 612:
+		return img
+	'''
 	# Calibrate camera
 	calib_image_path = "/home/linfeng-zc/Documents/Udacity/CarND-Advanced-Lane-Lines/camera_cal/*"
 	calib_json = 'camera_clibration.json'
