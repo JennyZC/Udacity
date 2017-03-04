@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import glob
 import json
+from Line import Line
+from fit_lines import *
 
 # Define a function that takes an image, gradient orientation,
 # and threshold min / max values.
@@ -128,64 +130,7 @@ def pipline(img):
 
 	return hs_combined
 
-	'''
-	sobel_img_x = abs_sobel_thresh(s_channel, orient='x', sobel_kernel=3, thresh=(50, 255))
-	sobel_img_y = abs_sobel_thresh(s_channel, orient='y', sobel_kernel=3, thresh=(50, 255))
-	mag_img = mag_thresh(s_channel, sobel_kernel=11, mag_thresh=(30, 100))
-	dir_img = dir_threshold(s_channel, sobel_kernel=15, thresh=(0.7, 1.2))
-
-	combined = np.zeros_like(s_img)
-	combined[((sobel_img_x == 1) & (sobel_img_y == 1)) | ((mag_img == 1) & (dir_img == 1))] = 1
-	combined = region_of_interest(combined)
-
-	sobel_img_x = abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=(50, 255))
-	
-	sobel_img_y = abs_sobel_thresh(img, orient='y', sobel_kernel=3, thresh=(50, 255))
-
-	mag_img = mag_thresh(img, sobel_kernel=11, mag_thresh=(30, 100))
-	dir_img = dir_threshold(img, sobel_kernel=15, thresh=(0.7, 1.2))
-
-	s_img = hls_select(img, (100, 255))
-
-	combined = np.zeros_like(s_img)
-	combined[((sobel_img_x == 1) & (sobel_img_y == 1)) | ((mag_img == 1) & (dir_img == 1))] = 1
-	'''
-	'''
-	f, axarr = plt.subplots(2, 3, figsize=(24, 9))
-	f.tight_layout()
-	axarr[0, 0].imshow(img, cmap='gray')
-	axarr[0, 1].imshow(undist)
-	axarr[1, 0].imshow(s_img, cmap='gray')
-	axarr[1, 1].imshow(h_img, cmap='gray')
-	axarr[1, 2].imshow(hs_combined, cmap='gray')
-	plt.show()
-	'''
-	
 def get_perspective_transform(source, destination):
-	'''
-	src = np.float32(
-		[[580, 460],
-		 [701, 460],
-		 [291, 660],
-		 [1009, 660]])
-	
-	dst = np.float32(
-		[[291, 460],
-		 [1009, 460],
-		 [291, 660],
-		 [1009, 660]])
-	'''
-	src = np.float32(
-		[[511, 511],
-		 [781, 511],
-		 [438, 564],
-		 [859, 564]])
-	
-	dst = np.float32(
-		[[465, 520],
-		 [815, 520],
-		 [465, 620],
-		 [815, 620]])
 	M = cv2.getPerspectiveTransform(source, destination)
 	#warped = cv2.warpPerspective(img, M, img_size, flags=cv2.INTER_LINEAR)
 	return M
@@ -199,13 +144,9 @@ def preprocess(image, mtx, dist):
 	img = mpimg.imread(image)
 	undist = cv2.undistort(img, mtx, dist)
 	binary_img = pipline(undist)
-	perspective_matrix = get_perspective_transform()
-	binary_warped = perspective_transform(binary_img, perspective_matrix)
-	return binary_warped
-
 
 if __name__=="__main__":
-	test_images = glob.glob("/home/linfeng-zc/Documents/Udacity/CarND-Advanced-Lane-Lines/test_images/*")
+	test_images = glob.glob("/home/linfeng-zc/Documents/Udacity/CarND-Advanced-Lane-Lines/test_images/straight_lines1.jpg")
 
 	# Load camera matrix and distort coeff
 	mtx_list = []
@@ -222,14 +163,31 @@ if __name__=="__main__":
 		img = mpimg.imread(image)
 		undist = cv2.undistort(img, mtx, dist)
 		binary_img = pipline(undist)
-		perspective_matrix = get_perspective_transform()
+		perspective_matrix = get_perspective_transform(src, dst)
 		binary_warped = perspective_transform(binary_img, perspective_matrix)
-			
+		undist_warped = perspective_transform(undist, perspective_matrix)
+		left_line = Line()
+		right_line = Line()
+		left_fitx, right_fitx, ploty, curverad, offset = fit_line_splitter(binary_warped, left_line, right_line)
+
+		x1 = int(np.average(left_fitx))
+		x2 = int(np.average(right_fitx))
+		y1 = int(np.amin(ploty))
+		y2 = int(np.amax(ploty))
+		print (x1, x2, y1, y2)
+		
+		cv2.rectangle(undist_warped, (x1, y1), (x2, y2), (255,0,0), 5)
+
+		Minv = get_perspective_transform(dst, src)
+		result = binary_warped = perspective_transform(undist_warped, Minv)
+
+	
 		f, axarr = plt.subplots(1, 3, figsize=(24, 9))
 		f.tight_layout()
 		axarr[0].imshow(img)
-		axarr[1].imshow(binary_img, cmap='gray')
-		axarr[2].imshow(binary_warped, cmap='gray')
+		axarr[1].imshow(undist_warped, cmap='gray')
+		axarr[2].imshow(result, cmap='gray')
 		
 		plt.show()
+		break
 		

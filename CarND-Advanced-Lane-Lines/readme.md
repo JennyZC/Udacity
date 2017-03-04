@@ -103,7 +103,9 @@ Calculate the average of previous 5 found coeeficients to smooth the result and 
 
 ####5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-Radius of curvature is calculated in "calculate" function in Line.py. it uses the formula below:
+Radius of curvature is calculated in "calculate" function in Line.py. After I calculate the curvatures for left and right lanes, I average them to get the curvature for current frame in fit_line_splitter in fit_line.py.
+
+Position of vehicle is calculated in function calculate_pos in fit_line.py. It first get the middle point of left and right x with y = image.height. Then the offset in pixel level is the difference of the middle point and image center. Multiply the result with 3.7/700 to get real world distance in meters.
 
 ####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 

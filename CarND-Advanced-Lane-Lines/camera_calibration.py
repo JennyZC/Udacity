@@ -25,6 +25,7 @@ def show_imgs(calib_images, mtx, dist, chess_board_shape):
 
 		cv2.imshow("undist", undist)
 		cv2.waitKey(0)
+		return
 	
 # Function used to calibrate camera
 # @param img_files A list of image names with global path
@@ -73,7 +74,7 @@ if __name__=="__main__":
 	calib_images = glob.glob("/home/linfeng-zc/Documents/Udacity/CarND-Advanced-Lane-Lines/camera_cal/*")
 
 	ret, mtx, dist, rvecs, tvecs = calibrate_camera(calib_images, (nx, ny))
-	#show_imgs(calib_images, mtx, dist, (nx, ny))
+	show_imgs(calib_images, mtx, dist, (nx, ny))
 	
 	print(mtx, dist)
 

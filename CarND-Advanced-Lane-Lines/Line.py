@@ -39,7 +39,7 @@ class Line():
 		curverad = ((1 + (2*fit_cr[0]*y_eval*ym_per_pix + fit_cr[1])**2)**1.5) / np.absolute(2*fit_cr[0])
 
 		# Now our radius of curvature is in meters
-		print("Radius of Curvature: ", curverad, 'm')
+		#print("Radius of Curvature: ", curverad, 'm')
 
 		# Example values: 632.1 m    626.2 m
 		self.radius_of_curvature = curverad

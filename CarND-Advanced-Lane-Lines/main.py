@@ -13,7 +13,6 @@ from fit_lines import *
 
 left_line = Line()
 right_line = Line()
-i = 0
 
 def calibrate(calib_image_path, calib_json, camera_matrix, dist_coeff):
 	# check if camera parameters exists
@@ -38,12 +37,6 @@ def calibrate(calib_image_path, calib_json, camera_matrix, dist_coeff):
 	return mtx, dist
 
 def process_image(img):
-	'''
-	global i
-	i = i + 1
-	if i < 612:
-		return img
-	'''
 	# Calibrate camera
 	calib_image_path = "/home/linfeng-zc/Documents/Udacity/CarND-Advanced-Lane-Lines/camera_cal/*"
 	calib_json = 'camera_clibration.json'
@@ -70,6 +63,8 @@ def process_image(img):
 	# Get binary warped image
 	undist = cv2.undistort(img, mtx, dist)
 	binary_img = pipline(undist)
+
+	#cv2.imwrite('images/binary_image.jpg', binary_img)
 	binary_warped = perspective_transform(binary_img, M)
 	
 	# Fit line
@@ -78,26 +73,18 @@ def process_image(img):
 
 	result = warp_pespective(undist, binary_warped, left_fitx, right_fitx, ploty, Minv)
 
-	cv2.putText(result, "Radius of Curvature: " + str(curverad) + "(m).", (20, 40), front, 4, (255,255,255), 2, cv2.LINE_AA)
+	font = cv2.FONT_HERSHEY_SIMPLEX
+	cv2.putText(result, "Radius of Curvature: " + str(curverad) + "(m).", (20, 80), font, 1, (255,255,255), 2, cv2.LINE_AA)
 	if offset < 0:
-		cv2.putText(result, "Vehicle is  " + str(abs(offset)) + "(m) right of center.", (20, 80), front, 4, (255,255,255), 2, cv2.LINE_AA)
+		cv2.putText(result, "Vehicle is  " + str(abs(offset)) + "(m) right of center.", (20, 180), font, 1, (255,255,255), 2, cv2.LINE_AA)
 	elif offset > 0:
-		cv2.putText(result, "Vehicle is  " + str(abs(offset)) + "(m) left of center.", (20, 80), front, 4, (255,255,255), 2, cv2.LINE_AA)
+		cv2.putText(result, "Vehicle is  " + str(abs(offset)) + "(m) left of center.", (20, 180), font, 1, (255,255,255), 2, cv2.LINE_AA)
 	else:
-		cv2.putText(result, "Vehicle is right in the center.", (20, 80), front, 4, (255,255,255), 2, cv2.LINE_AA)
+		cv2.putText(result, "Vehicle is right in the center.", (20, 180), font, 1, (255,255,255), 2, cv2.LINE_AA)
 	return result
 
 
 # Get lane binary image with color/gradient
-'''
-sample_image_path = ('/home/linfeng-zc/Documents/Udacity/CarND-Advanced-Lane-Lines/test_images/test6.jpg')
-img = mpimg.imread(sample_image_path)
-result = process_image(img)
-f, axarr = plt.subplots(1, 2, figsize=(24, 9))
-f.tight_layout()
-axarr[0].imshow(result)
-plt.show()
-'''
 white_output = 'project_video_result.mp4'
 clip1 = VideoFileClip("project_video.mp4")
 white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!

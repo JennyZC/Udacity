@@ -2,7 +2,6 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-from color_gradient_threshold import preprocess
 import glob
 import json
 
@@ -12,53 +11,45 @@ def calcualte_pos(left_x, right_x, center):
 	xm_per_pix = 3.7/700
 	return offset*xm_per_pix
 
-
-def fit_line_splitter(binary_warped, left_line, right_line):
-	last_n = 5
-	ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
-	curvature_threshold = 0.1
-	if not left_line.detected or not right_line.detected:
-		left_fit, right_fit, leftx, rightx = fit_line(binary_warped)
-		left_line.detected = True
-		right_line.detected = True
 def fit_line_splitter(binary_warped, left_line, right_line):
 	last_n = 5
 	ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
 	curvature_threshold = 0.1
 	# Check first image assume it will always get result
 	if not left_line.detected or not right_line.detected:
-        	fit_line(binary_warped, left_line, right_line)
-        	left_line.detected = True
-        	right_line.detected = True
-   	else:
-        	fit_line_quick(binary_warped, left_line, right_line)
+		fit_line(binary_warped, left_line, right_line)
+		left_line.detected = True
+		right_line.detected = True
+	else:
+		fit_line_quick(binary_warped, left_line, right_line)
 
-        	# If cannot find coefficient or the difference of curvature is larger than 10%, use previous best fit
-        	if not left_line.current_fit.all() or not right_line.current_fit.all() or (abs(right_line.radius_of_curvature - left_line.radius_of_curvature)/left_line.radius_of_curvature > curvature_threshold):
-            		left_line.current_fit = left_line.best_fit
-            		right_line.current_fit = right_line.best_fit
+		# If cannot find coefficient or the difference of curvature is larger than 10%, use previous best fit
+		if not left_line.current_fit.all() or not right_line.current_fit.all() or (abs(right_line.radius_of_curvature - left_line.radius_of_curvature)/left_line.radius_of_curvature > curvature_threshold):
+			left_line.current_fit = left_line.best_fit
+			right_line.current_fit = right_line.best_fit
 
     	# Update last n coefficient
-    	if len(left_line.recent_fit) == last_n:
-        	left_line.recent_fit.pop(0)
-        	right_line.recent_fit.pop(0)
+	if len(left_line.recent_fit) == last_n:
+		left_line.recent_fit.pop(0)
+		right_line.recent_fit.pop(0)
 
-    	left_line.recent_fit.append(left_line.current_fit)
-    	right_line.recent_fit.append(right_line.current_fit)
-    	# Update best fit
-    	left_line.best_fit = np.average(np.asarray(left_line.recent_fit), axis=0)
-    	right_line.best_fit = np.average(np.asarray(right_line.recent_fit), axis=0)
+	left_line.recent_fit.append(left_line.current_fit)
+	right_line.recent_fit.append(right_line.current_fit)
+	
+	# Update best fit
+	left_line.best_fit = np.average(np.asarray(left_line.recent_fit), axis=0)
+	right_line.best_fit = np.average(np.asarray(right_line.recent_fit), axis=0)
 
-    	left_fit = left_line.best_fit
-    	rifht_fit = right_line.best_fit
+	left_fit = left_line.best_fit
+	right_fit = right_line.best_fit
 
-    	# Generate x and y values for plotting
-    	left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
-    	right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+	# Generate x and y values for plotting
+	left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
+	right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
 
-    	offset = calcualte_pos(left_fitx[-1], right_fitx[-1], binary_warped.shape[1]/2)
-    	curverad = (left_line.radius_of_curvature + right_line.radius_of_curvature)/2
-    	return left_fitx, right_fitx, ploty, curverad, offset
+	offset = calcualte_pos(left_fitx[-1], right_fitx[-1], binary_warped.shape[1]/2)
+	curverad = (left_line.radius_of_curvature + right_line.radius_of_curvature)/2
+	return left_fitx, right_fitx, ploty, curverad, offset
 
 def fit_line(binary_warped, left_line, right_line):
 	# Assuming you have created a warped binary image called "binary_warped"
@@ -126,39 +117,29 @@ def fit_line(binary_warped, left_line, right_line):
 	righty = nonzeroy[right_lane_inds]
 
 	if len(leftx) == 0 or len(rightx) == 0:
-        	left_line.current_fit = np.array([])
-        	right_line.current_fit =  np.array([])
+		left_line.current_fit = np.array([])
+		right_line.current_fit =  np.array([])
+		return
 
     	# Fit a second order polynomial to each
-    	left_fit = np.polyfit(lefty, leftx, 2)
-    	right_fit = np.polyfit(righty, rightx, 2)
+	left_fit = np.polyfit(lefty, leftx, 2)
+	right_fit = np.polyfit(righty, rightx, 2)
 
-    	left_line.current_fit = left_fit
-    	right_line.current_fit = right_fit
-    	left_line.currentx = leftx
-    	right_line.currentx = rightx
-    	left_line.calculate(leftx, lefty)
-    	right_line.calculate(rightx, righty)
-
-	'''
-	# Generate x and y values for plotting
-	ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0] )
-	left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
-	right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
-
-	out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
-	out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
-	plt.imshow(out_img)
-	plt.plot(left_fitx, ploty, color='yellow')
-	plt.plot(right_fitx, ploty, color='yellow')
-	plt.xlim(0, 1280)
-	plt.ylim(720, 0)
-	'''
+	left_line.current_fit = left_fit
+	right_line.current_fit = right_fit
+	left_line.currentx = leftx
+	right_line.currentx = rightx
+	left_line.calculate(leftx, lefty)
+	right_line.calculate(rightx, righty)
 
 def fit_line_quick(binary_warped, left_line, right_line):
 	# Assume you now have a new warped binary image
 	# from the next frame of video (also called "binary_warped")
 	# It's now much easier to find line pixels!
+
+	left_fit = left_line.best_fit
+	right_fit = right_line.best_fit
+
 	nonzero = binary_warped.nonzero()
 	nonzeroy = np.array(nonzero[0])
 	nonzerox = np.array(nonzero[1])
@@ -173,26 +154,20 @@ def fit_line_quick(binary_warped, left_line, right_line):
 	righty = nonzeroy[right_lane_inds]
 
 	if len(leftx) == 0 or len(rightx) == 0:
-        fit_line(binary_warped)
+		fit_line(binary_warped, left_line, right_line)
+		return
 
     	# Fit a second order polynomial to each
-    	left_fit = np.polyfit(lefty, leftx, 2)
-    	right_fit = np.polyfit(righty, rightx, 2)
+	left_fit = np.polyfit(lefty, leftx, 2)
+	right_fit = np.polyfit(righty, rightx, 2)
 
-    	left_line.current_fit = left_fit
-   	right_line.current_fit = right_fit
-    	left_line.currentx = leftx
-    	right_line.currentx = rightx
-    	left_line.calculate(leftx, lefty)
-    	right_line.calculate(rightx, righty)
+	left_line.current_fit = left_fit
+	right_line.current_fit = right_fit
+	left_line.currentx = leftx
+	right_line.currentx = rightx
+	left_line.calculate(leftx, lefty)
+	right_line.calculate(rightx, righty)
 	
-	'''
-	# Generate x and y values for plotting
-	ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0] )
-	left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
-	right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
-	'''
-
 def warp_pespective(undist, binary_warped, left_fitx, right_fitx, ploty, Minv):
 	# Create an image to draw the lines on
 	warp_zero = np.zeros_like(binary_warped).astype(np.uint8)
@@ -319,10 +294,8 @@ if __name__=="__main__":
 		window_centroids = find_window_centroids(binary_warped, window_width, window_height, margin)
 		show_window_centroids(binary_warped, window_centroids, window_width, window_height, margin)
 
-		'''
 		fit_line(binary_warped)
 			
 		f, axarr = plt.subplots(1, 2, figsize=(24, 9))
 		f.tight_layout()
 		axarr[0].imshow(binary_warped, cmap='gray')
-		'''
