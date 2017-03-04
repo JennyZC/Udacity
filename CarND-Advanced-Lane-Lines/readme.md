@@ -18,14 +18,14 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: examples/original.jpg "distorted"
-[image2]: examples/undist.jpg "undistorted"
-[image3]: examples/test_image.jpg "Road Transformed"
-[image4]: examples/binary_img.jpg "Binary Example"
-[image5]: examples/warped_lanes.jpg "Warped Example"
-[image6]: examples/color_fit_lines.jpg "Fit Visual"
-[image7]: examples/example_output.jpg "Output"
-[video1]: project_video_result.mp4 "Video"
+[image1]: ./examples/original.jpg "distorted"
+[image2]: ./examples/undist.jpg "undistorted"
+[image3]: ./examples/test_image.jpg "Road Transformed"
+[image4]: ./examples/binary_img.jpg "Binary Example"
+[image5]: ./examples/warped_lanes.jpg "Warped Example"
+[image6]: ./examples/color_fit_lines.jpg "Fit Visual"
+[image7]: ./examples/example_output.jpg "Output"
+[video1]: ./project_video_result.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
 ###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.
