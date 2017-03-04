@@ -18,13 +18,14 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./examples/undistort_output.png "Undistorted"
-[image2]: ./test_images/test1.jpg "Road Transformed"
-[image3]: ./examples/binary_combo_example.jpg "Binary Example"
-[image4]: ./examples/warped_straight_lines.jpg "Warp Example"
-[image5]: ./examples/color_fit_lines.jpg "Fit Visual"
-[image6]: ./examples/example_output.jpg "Output"
-[video1]: ./project_video.mp4 "Video"
+[image1]: examples/original.jpg "distorted"
+[image2]: examples/undist.jpg "undistorted"
+[image3]: examples/test_image.jpg "Road Transformed"
+[image4]: examples/binary_img.jpg "Binary Example"
+[image5]: examples/warped_lanes.jpg "Warped Example"
+[image6]: examples/color_fit_lines.jpg "Fit Visual"
+[image7]: examples/example_output.jpg "Output"
+[video1]: project_video_result.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
 ###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.
@@ -41,12 +42,13 @@ I start by preparing "object points", which will be the (x, y, z) coordinates of
 I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the "cv2.calibrateCamera()" function.  I applied this distortion correction to the test image using the "cv2.undistort()" function and obtained this result:
 
 ![alt text][image1]
+![alt text][image2]
 
 ###Pipeline (single images)
 
 ####1. Provide an example of a distortion-corrected image.
 To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
-![alt text][image2]
+![alt text][image3]
 ####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 I tried to combine gradient and color method together to produce a good binary image, however I could not get the result as good as using color channel alone. Here is my solution in "color_gradient_threshold.py":
 1. Crop the image in function "region_of_interest" by only looking at the lower half of the image.
@@ -54,7 +56,7 @@ I tried to combine gradient and color method together to produce a good binary i
 3. Select h channel of the image with threshold in (0, 80] using function "hls_select".
 4. Perform a logical AND of the above two results to get the pipline image.
 
-![alt text][image3]
+![alt text][image4]
 
 ####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
@@ -84,7 +86,7 @@ This resulted in the following source and destination points:
 
 I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
 
-![alt text][image4]
+![alt text][image5]
 
 ####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 The fit_line main logic is in "fit_line_splitter" function in "fit_line.py". For the first frame where no line is detected, it will call the "fit_line" function which is a naive line finding algorithm as defined in the lecture video. The idea of this approach is to
@@ -97,7 +99,7 @@ Starting from the second frame, "fit_line_splitter" will try to call a faster al
 
 Calculate the average of previous 5 found coeeficients to smooth the result and treat this "best_fit" as the final result for each frame.
 
-![alt text][image5]
+![alt text][image6]
 
 ####5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
@@ -108,7 +110,7 @@ Radius of curvature is calculated in "calculate" function in Line.py. it uses th
 I implemented this step in "process_image" in "main.py" using warp_perspective.  Here is an example of my result on a test image:
 
 
-![alt text][image6]
+![alt text][image7]
 
 ---
 
