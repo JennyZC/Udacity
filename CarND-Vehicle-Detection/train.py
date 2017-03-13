@@ -1,13 +1,13 @@
 import numpy as np
-import glob
-import random
-import time
-import pickle
+import glob, random, time, pickle
+import matplotlib.pyplot as plt
 from feature_extraction import extract_features
 from sklearn.cross_validation import train_test_split
 from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
+import matplotlib.image as mpimg
 
+# train svm classifier
 def train_svm_clf(car_file, notcar_file, test_size=0.2):
 	color_space = 'YCrCb' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
 	orient = 9
@@ -87,9 +87,6 @@ if __name__=="__main__":
 
 	random.shuffle(car_file)
 	random.shuffle(notcar_file)
-	
-	#car_file = car_file[0:input_file_len]
-	#notcar_file = notcar_file[0:input_file_len]
 
 	print ('CAR FILE NUMBER: ' , len(car_file))
 	print ('NOTCAR FILE NUMBER: ' , len(notcar_file))

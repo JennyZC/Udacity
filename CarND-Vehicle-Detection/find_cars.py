@@ -4,6 +4,7 @@ import numpy as np
 import pickle, cv2, math, glob
 from scipy.ndimage.measurements import label
 from feature_extraction import *
+from Car import Car
 
 # Load model and parameters
 dist_pickle = pickle.load( open("svc_pickle.p", "rb" ) )
@@ -17,6 +18,9 @@ hist_bins = dist_pickle["hist_bins"]
 color_space = dist_pickle["color_space"]
 print('Using:','orientations: ', orient, ', pix_per_cell: ', pix_per_cell, ', cell_per_block: ', cell_per_block, 
 	', spatial_size: ', spatial_size, ', hist_bins: ', hist_bins, ', color_space: ', color_space)
+
+history_len = 5
+car = Car(history_len)
 
 # Define a single function that can extract features using hog sub-sampling and make predictions
 def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins, color_space):
@@ -40,7 +44,7 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
 	# 64 was the orginal sampling rate, with 8 cells and 8 pix per cell
 	window = 64
 	nblocks_per_window = (window // pix_per_cell)-1 
-	cells_per_step = 2  # Instead of overlap, define how many cells to step
+	cells_per_step = 2  
 	nxsteps = (nxblocks - nblocks_per_window) // cells_per_step
 	nysteps = (nyblocks - nblocks_per_window) // cells_per_step
 
@@ -50,6 +54,7 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
 	hog3 = get_hog_features(ch3, orient, pix_per_cell, cell_per_block, feature_vec=False)
 
 	box_list = []
+	all_windows = []
 	for xb in range(nxsteps):
 		for yb in range(nysteps):
 			ypos = yb*cells_per_step
@@ -73,19 +78,25 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
 
 			# Scale features and make a prediction
 			test_features = X_scaler.transform(np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1))	
-
+			
 			#test_features = X_scaler.transform(np.hstack((shape_feat, hist_feat)).reshape(1, -1))	
 			test_prediction = svc.predict(test_features)
 
+			xbox_left = np.int(xleft*scale)
+			ytop_draw = np.int(ytop*scale)
+			win_draw = np.int(window*scale)
+			all_windows.append(((xbox_left, ytop_draw+ystart), (xbox_left+win_draw, ytop_draw+win_draw+ystart)))
+
+			
 			if test_prediction == 1:
 				xbox_left = np.int(xleft*scale)
 				ytop_draw = np.int(ytop*scale)
 				win_draw = np.int(window*scale)
 			
 				box = ((xbox_left, ytop_draw+ystart), (xbox_left+win_draw, ytop_draw+win_draw+ystart))	
-				box_list.append(box)	
+				box_list.append(box)
 
-	return box_list
+	return box_list, all_windows
 
 
 def add_heat(heatmap, bbox_list):
@@ -121,55 +132,43 @@ def draw_labeled_bboxes(img, labels):
     # Return the image
     return img
 
+#Pipeline function to find cars in each image frame
 def pipeline(img):
-	# Find cars use loaded model
 
+	# Find cars use loaded model
 	ystart = 400
 	ystop = 656
 
 	scale = 1.5
 	box_list = []
-	for y_start in [400, 464, 528]:
-		y_stop = y_start + 128
-		print(y_start, y_stop, scale)
-		boxes = find_cars(img, y_start, y_stop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins, color_space)
+	all_windows = []
+	for y_start in [400, 464]:
+		y_stop = y_start + 192
+		#print(y_start, y_stop, scale)
+		boxes, windows = find_cars(img, y_start, y_stop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins, color_space)
 		box_list.extend(boxes)
-		scale += 0.5
+		#print('windows:', windows)
+		all_windows.append(windows)
+		scale += 0.5		
 
 	scale = 2.5
-	box_list.extend(find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins, color_space))
-		
-	'''
+	boxes, windows = find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins, color_space)
+	box_list.extend(boxes)
+	all_windows.append(windows)	
 
-
-	level = 2
-	y_interval = (ystop - ystart) // level
-
-	y_start = ystart
-	y_stop = y_start + y_interval
-	scale = 1.
-	box_list = []
-	while True:
-		print(y_start, y_stop)
-		boxes = find_cars(img, y_start, y_stop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins, color_space)
-		box_list.extend(boxes)
-
-		if y_stop == ystop:
-			break;
-
-		y_start = y_stop - 64 * scale
-		scale += 0.5
-
-		y_start = min(y_start, ystop - 64 * scale)
-		y_stop = min(y_start + y_interval , ystop)
-	'''
+	#add detected boxed to car history
+	car.add_car(box_list)
 	
+	# flatten list of list boxes
+	boxes = sum(car.car_history, [])
+	#print (boxes)
+
 	# Use heat-map to remove false positives
 	heat = np.zeros_like(img[:,:,0]).astype(np.float)
 	# Add heat to each box in box list
-	heat = add_heat(heat, box_list)
+	heat = add_heat(heat, boxes)
 	# Apply threshold to help remove false positives
-	heat = apply_threshold(heat, 1)
+	heat = apply_threshold(heat, 4)
 	# Visualize the heatmap when displaying    
 	heatmap = np.clip(heat, 0, 255)
 	# Find final boxes from heatmap using label function
@@ -177,23 +176,18 @@ def pipeline(img):
 	heated_img = draw_labeled_bboxes(np.copy(img), labels)
 
 	# Visualization
+	# Draw car boxes
 	box_img = np.copy(img)
 	for box in box_list:
-		cv2.rectangle(box_img,box[0], box[1],(0,0,255),6) 
+		cv2.rectangle(box_img,box[0], box[1], (0,0,255), 6) 
 	
-	f, axarr = plt.subplots(1, 2, figsize=(24, 9))
-	f.tight_layout()
-	axarr[0].imshow(box_img)
-	axarr[1].imshow(heated_img)
-	plt.show()
+	# Draw windows
+	windowed_img1 = np.copy(img)
+	windowed_img2 = np.copy(img)
+	windowed_img3 = np.copy(img)
 
 	return heated_img
 
-def display_image(img):
-	f, axarr = plt.subplots(1, 1, figsize=(24, 9))
-	f.tight_layout()
-	axarr.imshow(img)
-	plt.show()
 
 if __name__=="__main__":
 	test_image_path = '/home/linfeng-zc/Documents/Udacity/CarND-Vehicle-Detection/test_images/'
@@ -201,4 +195,3 @@ if __name__=="__main__":
 	for image in test_images:
 		img = mpimg.imread(image)
 		heated_img = pipeline(img)
-		#display_image(heated_img)

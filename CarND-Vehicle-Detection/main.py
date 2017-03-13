@@ -8,7 +8,7 @@ from find_cars import *
 #	pipeline(image)
 
 # Get lane binary image with color/gradient
-white_output = 'test_video_result.mp4'
+white_output = 'project_video_result.mp4'
 clip1 = VideoFileClip("/home/linfeng-zc/Documents/Udacity/CarND-Vehicle-Detection/project_video.mp4")
 white_clip = clip1.fl_image(pipeline) #NOTE: this function expects color images!!
 white_clip.write_videofile(white_output, audio=False)

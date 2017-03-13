@@ -23,6 +23,7 @@ def color_hist(img, nbins=32, bins_range=(0, 256)):
 	# Return the individual histograms, bin_centers and feature vector
 	return hist_features
 
+#Define a function to get hog feature
 def get_hog_features(img, orient, pix_per_cell, cell_per_block, vis=False, feature_vec=True):
 	# Call with two outputs if vis==True
 	if vis == True:
@@ -42,6 +43,7 @@ def get_hog_features(img, orient, pix_per_cell, cell_per_block, vis=False, featu
 			   visualise=vis, feature_vector=feature_vec)
 		return features
 
+# convert color image into desired color space
 def convert_color(img, color_space):
 	if color_space != 'RGB':
 		if color_space == 'HSV':
@@ -62,6 +64,7 @@ def convert_color(img, color_space):
 
 	return feature_image	  
 
+# Get single image features
 def single_img_features(img, color_space='RGB', spatial_size=(32, 32),
 			hist_bins=32, orient=9, 
 			pix_per_cell=8, cell_per_block=2, hog_channel=0,
@@ -86,7 +89,7 @@ def single_img_features(img, color_space='RGB', spatial_size=(32, 32),
 			for channel in range(feature_image.shape[2]):
 				hog_features.extend(get_hog_features(feature_image[:,:,channel], 
 									orient, pix_per_cell, cell_per_block, 
-									vis=False, feature_vec=True))	  
+									vis=False, feature_vec=True))
 		else:
 			hog_features = get_hog_features(feature_image[:,:,hog_channel], orient, 
 						pix_per_cell, cell_per_block, vis=False, feature_vec=True)
@@ -97,6 +100,7 @@ def single_img_features(img, color_space='RGB', spatial_size=(32, 32),
 
 	return np.concatenate(img_features)
 
+# Pipeline function to extract features for each image
 def extract_features(imgs, color_space='RGB', spatial_size=(32, 32),
 			hist_bins=32, orient=9,
 			pix_per_cell=8, cell_per_block=2, hog_channel=0,
