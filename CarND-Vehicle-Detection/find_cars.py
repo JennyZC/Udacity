@@ -1,17 +1,28 @@
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
-import pickle
-import cv2
+import pickle, cv2, math, glob
 from scipy.ndimage.measurements import label
 from feature_extraction import *
 
+# Load model and parameters
+dist_pickle = pickle.load( open("svc_pickle.p", "rb" ) )
+svc = dist_pickle["svc"]
+X_scaler = dist_pickle["scaler"]
+orient = dist_pickle["orient"]
+pix_per_cell = dist_pickle["pix_per_cell"]
+cell_per_block = dist_pickle["cell_per_block"]
+spatial_size = dist_pickle["spatial_size"]
+hist_bins = dist_pickle["hist_bins"]
+color_space = dist_pickle["color_space"]
+print('Using:','orientations: ', orient, ', pix_per_cell: ', pix_per_cell, ', cell_per_block: ', cell_per_block, 
+	', spatial_size: ', spatial_size, ', hist_bins: ', hist_bins, ', color_space: ', color_space)
+
 # Define a single function that can extract features using hog sub-sampling and make predictions
-def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins, colorspace):
+def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins, color_space):
 	img = img.astype(np.float32)/255
-	
 	img_tosearch = img[ystart:ystop,:,:]
-	ctrans_tosearch = convert_color(img_tosearch, colorspace)
+	ctrans_tosearch = convert_color(img_tosearch, color_space)
 
 	if scale != 1:
 		imshape = ctrans_tosearch.shape
@@ -110,36 +121,55 @@ def draw_labeled_bboxes(img, labels):
     # Return the image
     return img
 
-
-if __name__=="__main__":
-	
-	# Load model and parameters
-	dist_pickle = pickle.load( open("svc_pickle.p", "rb" ) )
-	svc = dist_pickle["svc"]
-	X_scaler = dist_pickle["scaler"]
-	orient = dist_pickle["orient"]
-	pix_per_cell = dist_pickle["pix_per_cell"]
-	cell_per_block = dist_pickle["cell_per_block"]
-	spatial_size = dist_pickle["spatial_size"]
-	hist_bins = dist_pickle["hist_bins"]
-	colorspace = dist_pickle["colorspace"]
-	
-	# Load image
-	test_image_path = '/home/linfeng-zc/Documents/Udacity/CarND-Vehicle-Detection/test_images/test1.jpg'
-	img = mpimg.imread(test_image_path)
-
+def pipeline(img):
 	# Find cars use loaded model
+
 	ystart = 400
 	ystop = 656
-	scale = 1.5
-	box_list = find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins, colorspace)
 
+	scale = 1.5
+	box_list = []
+	for y_start in [400, 464, 528]:
+		y_stop = y_start + 128
+		print(y_start, y_stop, scale)
+		boxes = find_cars(img, y_start, y_stop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins, color_space)
+		box_list.extend(boxes)
+		scale += 0.5
+
+	scale = 2.5
+	box_list.extend(find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins, color_space))
+		
+	'''
+
+
+	level = 2
+	y_interval = (ystop - ystart) // level
+
+	y_start = ystart
+	y_stop = y_start + y_interval
+	scale = 1.
+	box_list = []
+	while True:
+		print(y_start, y_stop)
+		boxes = find_cars(img, y_start, y_stop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins, color_space)
+		box_list.extend(boxes)
+
+		if y_stop == ystop:
+			break;
+
+		y_start = y_stop - 64 * scale
+		scale += 0.5
+
+		y_start = min(y_start, ystop - 64 * scale)
+		y_stop = min(y_start + y_interval , ystop)
+	'''
+	
 	# Use heat-map to remove false positives
 	heat = np.zeros_like(img[:,:,0]).astype(np.float)
 	# Add heat to each box in box list
 	heat = add_heat(heat, box_list)
 	# Apply threshold to help remove false positives
-	heat = apply_threshold(heat,1)
+	heat = apply_threshold(heat, 1)
 	# Visualize the heatmap when displaying    
 	heatmap = np.clip(heat, 0, 255)
 	# Find final boxes from heatmap using label function
@@ -150,12 +180,25 @@ if __name__=="__main__":
 	box_img = np.copy(img)
 	for box in box_list:
 		cv2.rectangle(box_img,box[0], box[1],(0,0,255),6) 
-
-	f, axarr = plt.subplots(2, 2, figsize=(24, 9))
+	
+	f, axarr = plt.subplots(1, 2, figsize=(24, 9))
 	f.tight_layout()
-	axarr[0][0].imshow(img)
-	axarr[0][1].imshow(box_img)
-	axarr[1][0].imshow(heatmap, cmap='hot')
-	axarr[1][1].imshow(heated_img)
-
+	axarr[0].imshow(box_img)
+	axarr[1].imshow(heated_img)
 	plt.show()
+
+	return heated_img
+
+def display_image(img):
+	f, axarr = plt.subplots(1, 1, figsize=(24, 9))
+	f.tight_layout()
+	axarr.imshow(img)
+	plt.show()
+
+if __name__=="__main__":
+	test_image_path = '/home/linfeng-zc/Documents/Udacity/CarND-Vehicle-Detection/test_images/'
+	test_images = [file for file in glob.glob(test_image_path + '*.jpg', recursive=True)]
+	for image in test_images:
+		img = mpimg.imread(image)
+		heated_img = pipeline(img)
+		#display_image(heated_img)

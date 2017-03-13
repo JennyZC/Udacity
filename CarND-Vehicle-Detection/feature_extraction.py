@@ -8,7 +8,7 @@ from skimage.feature import hog
 # Define a function to compute binned color features  
 def bin_spatial(img, size=(32, 32)):
 	# Use cv2.resize().ravel() to create the feature vector
-	features = cv2.resize(img, size).ravel() 
+	features = cv2.resize(img, size).ravel()
 	# Return the feature vector
 	return features
 
@@ -46,7 +46,6 @@ def convert_color(img, color_space):
 	if color_space != 'RGB':
 		if color_space == 'HSV':
 			feature_image = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-			#feature_image = feature_image/255
 		elif color_space == 'LUV':
 			feature_image = cv2.cvtColor(img, cv2.COLOR_RGB2LUV)
 		elif color_space == 'HLS':
@@ -58,6 +57,9 @@ def convert_color(img, color_space):
 	else: 
 		feature_image = np.copy(img)
 
+	#if np.argmax(feature_image > 1):
+	#	feature_image = feature_image.astype(np.float32)/255
+
 	return feature_image	  
 
 def single_img_features(img, color_space='RGB', spatial_size=(32, 32),
@@ -68,7 +70,6 @@ def single_img_features(img, color_space='RGB', spatial_size=(32, 32),
 	img_features = []
 
 	feature_image = convert_color(img, color_space)
-
 	if spatial_feat == True:
 		spatial_features = bin_spatial(feature_image, size=spatial_size)
 		img_features.append(spatial_features)

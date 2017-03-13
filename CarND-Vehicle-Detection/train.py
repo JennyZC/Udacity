@@ -9,7 +9,7 @@ from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
 
 def train_svm_clf(car_file, notcar_file, test_size=0.2):
-	colorspace = 'RGB' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
+	color_space = 'YCrCb' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
 	orient = 9
 	pix_per_cell = 8
 	cell_per_block = 2
@@ -18,11 +18,11 @@ def train_svm_clf(car_file, notcar_file, test_size=0.2):
 	hist_bins=32
 
 	t=time.time()
-	car_features = extract_features(car_file, color_space=colorspace, spatial_size=spatial_size, hist_bins=hist_bins,
+	car_features = extract_features(car_file, color_space=color_space, spatial_size=spatial_size, hist_bins=hist_bins,
 					orient=orient, pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, 
 					hog_channel=hog_channel)
 
-	notcar_features = extract_features(notcar_file, color_space=colorspace, spatial_size=spatial_size, hist_bins=hist_bins,
+	notcar_features = extract_features(notcar_file, color_space=color_space, spatial_size=spatial_size, hist_bins=hist_bins,
 					orient=orient, pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, 
 					hog_channel=hog_channel)
 	t2 = time.time()
@@ -72,13 +72,13 @@ def train_svm_clf(car_file, notcar_file, test_size=0.2):
 	svc_dict["cell_per_block"] = cell_per_block
 	svc_dict["spatial_size"] = spatial_size
 	svc_dict["hist_bins"] = hist_bins
-	svc_dict["colorspace"] = colorspace
+	svc_dict["color_space"] = color_space
 
 	return svc_dict
 
 if __name__=="__main__":
-	car_path = '/home/linfeng-zc/Documents/Udacity/CarND-Vehicle-Detection/vehicles/GTI*/'
-	notcar_path = '/home/linfeng-zc/Documents/Udacity/CarND-Vehicle-Detection/non-vehicles/GTI/'
+	car_path = '/home/linfeng-zc/Documents/Udacity/CarND-Vehicle-Detection/vehicles/*/'
+	notcar_path = '/home/linfeng-zc/Documents/Udacity/CarND-Vehicle-Detection/non-vehicles/*/'
 
 	car_file = [file for file in glob.glob(car_path + '*.png', recursive=True)]
 	notcar_file = [file for file in glob.glob(notcar_path + '*.png', recursive=True)]
@@ -87,13 +87,13 @@ if __name__=="__main__":
 
 	random.shuffle(car_file)
 	random.shuffle(notcar_file)
-
 	
-	car_file = car_file[0:input_file_len]
-	notcar_file = notcar_file[0:input_file_len]
+	#car_file = car_file[0:input_file_len]
+	#notcar_file = notcar_file[0:input_file_len]
 
 	print ('CAR FILE NUMBER: ' , len(car_file))
 	print ('NOTCAR FILE NUMBER: ' , len(notcar_file))
+
 	svc_dict = train_svm_clf(car_file, notcar_file)
 	
 	with open('svc_pickle.p', 'wb') as f:
