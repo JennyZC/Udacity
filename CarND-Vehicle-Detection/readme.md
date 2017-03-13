@@ -1,5 +1,5 @@
 [//]: # (Image References)
-[image1]: ./images/car_not_car.png
+[image1]: ./images/car_notcar.png
 [image2]: ./images/Car-channel1.png
 [image3]: ./images/not-Car-channel1.png
 [image4]: ./images/sliding_window.png
